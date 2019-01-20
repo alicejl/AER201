@@ -28,7 +28,7 @@ void main(void){
     
     	// Set all A/D ports to digital (pg. 222)
     	ADCON1 = 0b00001111;
-    
+   
     	// Initialize LCD
 	initLCD();
 	initMenu();
@@ -50,12 +50,26 @@ void main(void){
         	unsigned char temp = keys[keypress];
 	        if (temp == '1'){
 			run();
+			break;
 		}
 		
 		elif (temp == '2'){
 			showLog();
+			break;
 		}
     }
+}
+
+void run(void){ //temp stand in for running autonomous routine
+	char startMessage[] = "Starting run";
+	send_byte(0b00000001); // Display clear
+	dispInput(startMessage, 12);
+}
+
+void showLog(void){ //stand in for display run logs 
+	char Logs[] = "Showing Logs";
+	send_byte(0b00000001); // Display clear
+	dispInput(Logs, 12);
 }
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
