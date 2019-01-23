@@ -50,29 +50,16 @@ void main(void){
         
         	unsigned char temp = keys[keypress];
 	        if (temp == '1'){
-			run();
-			break;
-		}
+                run();
+                //break;
+            }
 		
-		elif (temp == '2'){
-			showLog();
-			break;
-		}
+            else if (temp == '2'){
+                showLog();
+                //break;
+            }
     }
 }
-
-void run(void){ //temp stand in for running autonomous routine
-	char startMessage[] = "Starting run";
-	send_byte(0b00000001); // Display clear
-	dispInput(startMessage, 12);
-}
-
-void showLog(void){ //stand in for display run logs 
-	char Logs[] = "Showing Logs";
-	send_byte(0b00000001); // Display clear
-	dispInput(Logs, 12);
-}
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //lcd.c
 /**
@@ -92,10 +79,10 @@ void showLog(void){ //stand in for display run logs
 const unsigned char LCD_SIZE_HORZ = 16;
 const unsigned char LCD_SIZE_VERT = 4;
 
-const unsigned char LCD_LINE1_ADDR = 0;
-const unsigned char LCD_LINE2_ADDR = 64;
-const unsigned char LCD_LINE3_ADDR = 16;
-const unsigned char LCD_LINE4_ADDR = 80;
+const unsigned char LCD_LINE1_ADDR = 0x0;
+const unsigned char LCD_LINE2_ADDR = 0x40;
+const unsigned char LCD_LINE3_ADDR = 0x10;
+const unsigned char LCD_LINE4_ADDR = 0x50;
 
 /***************************** Private Functions *****************************/
 /**
@@ -163,19 +150,23 @@ void initLCD(void){
     send_byte(0b00000110); // Entry mode set
     
     // Enforce on: display, cursor, and cursor blinking
-    lcd_display_control(true, true, true);
+    lcd_display_control(true, false, false);
 }
 
 void initMenu(void){
-	char welcome[] = "Welcome";
-	char inst[] = "Please press number on keypad to select option";
-	char menu[] = "1. Start  2.Logs";
+	char welcome[] = "    Welcome!   ";
+	char inst1[] = "Press number to ";
+    char inst2[] = "     select     ";
+	char menu1[] = "1. Start        ";
+    char menu2[] = "2. Logs         ";
 
-	dispInput(welcome,7);
-	__delay_us(500000);
+	dispInput(welcome,16);
+	__delay_us(1000000);
 	send_byte(0b00000001); // Display clear
-	dispInput(inst,46);
-	dispInput(menu,16);
+	dispInput(inst1,16);
+    dispInput(inst2,16);
+	dispInput(menu1,16);
+    dispInput(menu1,16);
 }	
 
 void lcd_shift_cursor(unsigned char numChars, lcd_direction_e direction){
@@ -195,13 +186,27 @@ void putch(char data){
     send_byte((unsigned char)data);
 }
 
-void dispInput(char *text, int n){ //dont quite remember how to work with arrays and pointers in c
+void dispInput(char *text, int n){ 
 	int i=0;
 	for (i=0; i<n; i++){
 		putch(text[i]);
 	}
+    return;
 }
 
+void run(void){ //temp stand in for running autonomous routine
+	char startMessage[] = "Starting run";
+    send_byte(0b00001000); // Display off
+	send_byte(0b00000001); // Display clear
+	dispInput(startMessage, 12);
+}
+
+void showLog(void){ //stand in for display run logs 
+	char Logs[] = "Showing Logs";
+    send_byte(0b00001000); // Display off
+	send_byte(0b00000001); // Display clear
+	dispInput(Logs, 12);
+}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              //lcd.h                                                                                                   
 /**
  * @file
@@ -223,7 +228,7 @@ void dispInput(char *text, int n){ //dont quite remember how to work with arrays
 #include <xc.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <configBits.h>
+#include "configBits.h"
 
 /********************************** Macros ***********************************/
 #define RS LATDbits.LATD2          
@@ -334,8 +339,11 @@ void initMenu(void);
  */
 void dispInput(char *text, int n);
 
+void run(void);
+void showLog(void);
+
 /**
  * @}
  */
 
-#endif	/* LCD_H */                                                                                                                                                                                                         
+#endif	/* LCD_H */                                                                                                                                                         
