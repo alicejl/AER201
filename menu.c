@@ -74,7 +74,7 @@ void menuLoop(void){
             else{
                 lcd_clear();
                 lcd_set_ddram_addr(LCD_LINE1_ADDR);
-                printf("  Invalid Input!");
+                printf(" Invalid Input!");
                 lcd_set_ddram_addr(LCD_LINE2_ADDR);
                 printf("Select 1,2 or 3");
                 __delay_us(1000000);
@@ -267,6 +267,7 @@ void showLog(void){ //stand in for display run logs
             lcd_clear();
             lcd_set_ddram_addr(LCD_LINE1_ADDR);
             printf(" Invalid Input!");
+	    __delay_us(750000);
             lcd_clear();
             lcd_set_ddram_addr(LCD_LINE1_ADDR);
             printf("  Showing Logs");
