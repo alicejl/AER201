@@ -19,6 +19,8 @@
 
 const char keys[] = "123A456B789C*0#D"; 
 
+void menuLoop(void);
+
 void main(void){
 	// RD2 is the character LCD RS
 	// RD3 is the character LCD enable (E)
@@ -29,10 +31,17 @@ void main(void){
     	// Set all A/D ports to digital (pg. 222)
     	ADCON1 = 0b00001111;
    
-    	// Initialize LCD
-	initLCD();
-	initMenu();
-	
+    	initLCD();// Initialize LCD
+        lcd_set_ddram_addr(LCD_LINE1_ADDR);
+        printf("    Welcome!");
+        __delay_us(750000);
+	while(1){
+        initMenu();
+        menuLoop();
+	}
+}
+
+void menuLoop(void){
 	// Main loop
 	while(1){
         	// RB1 is the interrupt pin, so if there is no key pressed, RB1 will be
@@ -48,22 +57,28 @@ void main(void){
         	Nop(); // Apply breakpoint here to prevent compiler optimizations
         
         	unsigned char temp = keys[keypress];
-	        if (temp == '1'){//HAVE A FAILSAFE FOR OTHER 
+	        if (temp == '1'){ 
                 run();
+                return;
             }
 		
             else if (temp == '2'){
                 showLog();
+                return;
             }
             
             else if (temp == '3'){
                 dateTime();
+                return;
             }
             else{
-                clearDisp();
-                printf('  Invalid Input!');
+                lcd_clear();
+                lcd_set_ddram_addr(LCD_LINE1_ADDR);
+                printf("  Invalid Input!");
                 lcd_set_ddram_addr(LCD_LINE2_ADDR);
-                printf('Select 1,2 or 3')
+                printf("Select 1,2 or 3");
+                __delay_us(1000000);
+                return;
             }
     }
 }
@@ -86,11 +101,12 @@ void main(void){
 const unsigned char LCD_SIZE_HORZ = 16;
 const unsigned char LCD_SIZE_VERT = 4;
 
-const unsigned char LCD_LINE1_ADDR = 0x0;
+const unsigned char LCD_LINE1_ADDR = 0;
 const unsigned char LCD_LINE2_ADDR = 0x40;
 const unsigned char LCD_LINE3_ADDR = 0x10;
 const unsigned char LCD_LINE4_ADDR = 0x50;
-const unsigned char CLEAR_LCD_DISP = 0b00000001;
+
+const char keys[] = "123A456B789C*0#D"; 
 
 /***************************** Private Functions *****************************/
 /**
@@ -162,23 +178,15 @@ void initLCD(void){
 }
 
 void initMenu(void){
-	char welcome[] = "    Welcome!    ";
-	char inst1[] = "Press to select";
-    //char inst2[] = "     select     ";
-	char menu1[] = "1. Start";
-    char menu2[] = "2. Logs";
-    char menu3[] = "3. Date Time";
-
-	dispInput(welcome,16);
-	__delay_us(1000000);
-    clearDisp();
-	dispInput(inst1,15);
-    //dispInput(inst2,16);
-	dispInput(menu1,8);
+    lcd_clear();
+    lcd_set_ddram_addr(LCD_LINE1_ADDR);
+	printf("Press to select");
     lcd_set_ddram_addr(LCD_LINE2_ADDR);
-    dispInput(menu2,7);
+    printf("1. Start");
     lcd_set_ddram_addr(LCD_LINE3_ADDR);
-    dispInput(menu3,12);
+    printf("2. Logs");
+    lcd_set_ddram_addr(LCD_LINE4_ADDR);
+    printf("3. Date and Time");
 }	
 
 void lcd_shift_cursor(unsigned char numChars, lcd_direction_e direction){
@@ -198,33 +206,98 @@ void putch(char data){
     send_byte((unsigned char)data);
 }
 
-void dispInput(char *text, int n){ 
-	int i=0;
-	for (i=0; i<n; i++){
-		putch(text[i]);
-	}
-    return;
-}
-
 void run(void){ //temp stand in for running autonomous routine
-	char startMessage[] = "Starting run";
-    clearDisp();
-	dispInput(startMessage, 12);
+	lcd_clear();
+    lcd_set_ddram_addr(LCD_LINE1_ADDR);
+    printf("  Starting Run");
+    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+    printf(" Press * to end");
+    while (1){
+        while(PORTBbits.RB1 == 0){ continue;}
+        unsigned char keypress = (PORTB & 0xF0) >>4;
+        while(PORTBbits.RB1 == 1){continue;}
+        
+        unsigned char temp = keys[keypress];
+        if (temp == '*'){
+            return;
+        }
+    }
 }
 
 void showLog(void){ //stand in for display run logs 
-	char Logs[] = "Showing Logs";
-    clearDisp();
-	dispInput(Logs, 12);
+    lcd_clear();
+    lcd_set_ddram_addr(LCD_LINE1_ADDR);
+    printf("  Showing Logs");
+    lcd_set_ddram_addr(LCD_LINE2_ADDR);
+    printf("1. Run 1");
+    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+    printf("2. Run 2");
+    lcd_set_ddram_addr(LCD_LINE4_ADDR);
+    printf("3. Run 3");
+    
+    while (1){
+        while(PORTBbits.RB1 == 0){  continue;   }
+	    unsigned char keypress = (PORTB & 0xF0) >> 4;
+        while(PORTBbits.RB1 == 1){  continue;   }
+        
+       	Nop(); // Apply breakpoint here to prevent compiler optimizations
+        
+       	unsigned char temp = keys[keypress];
+        if ((temp == '1')||(temp == '2')||(temp == '3')){
+            //read the queue of
+            lcd_clear();
+            lcd_set_ddram_addr(LCD_LINE1_ADDR);
+            printf("Display run");
+            lcd_set_ddram_addr(LCD_LINE4_ADDR);
+            printf("Press * to exit");
+            while (1){
+                while(PORTBbits.RB1 == 0){  continue;   }
+                keypress = (PORTB & 0xF0) >> 4;
+                while(PORTBbits.RB1 == 1){  continue;   }
+        
+                Nop();
+                temp = keys[keypress];
+                if (temp =='*'){
+                    return;
+                }
+            }
+        } 
+        
+        else{
+            lcd_clear();
+            lcd_set_ddram_addr(LCD_LINE1_ADDR);
+            printf(" Invalid Input!");
+            lcd_clear();
+            lcd_set_ddram_addr(LCD_LINE1_ADDR);
+            printf("  Showing Logs");
+            lcd_set_ddram_addr(LCD_LINE2_ADDR);
+            printf("1. Run 1");
+            lcd_set_ddram_addr(LCD_LINE3_ADDR);
+            printf("2. Run 2");
+            lcd_set_ddram_addr(LCD_LINE4_ADDR);
+            printf("3. Run 3");
+        }
+    }
 }
+    
 
 void dateTime(void){
-    char date;
-}
-
-void clearDisp(void){
-    RS = 0;
-    send_byte(0b00000001); // Display clear
+    //char date;
+    lcd_clear();
+    lcd_set_ddram_addr(LCD_LINE1_ADDR);
+    printf("Date Time");
+        lcd_set_ddram_addr(LCD_LINE3_ADDR);
+    printf(" Press * to end");
+    while (1){
+        while(PORTBbits.RB1 == 0){ continue;}
+        unsigned char keypress = (PORTB & 0xF0) >>4;
+        while(PORTBbits.RB1 == 1){continue;}
+        
+        unsigned char temp = keys[keypress];
+        if (temp == '*'){
+            return;
+        }
+    }
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              /**
  * @file
@@ -351,24 +424,17 @@ void putch(char data);
  */
 void initMenu(void);
 
-/**
- * @brief displays strings of text on LCD
- * @param char string and int length of string
- */
-void dispInput(char *text, int n);
 
 void run(void);
 void showLog(void);
+void dateTime(void);
 
-/**
- * @brief clears LCD display
- */
-void clearDisp(void);
+
 /**
  * @}
  */
 
-#endif	/* LCD_H */     
+#endif	/* LCD_H */
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //configBits.h
 /**
