@@ -25,10 +25,10 @@ const char happynewyear[7] = {
     0x45, // 45 Seconds 
     0x59, // 59 Minutes
     0x15, // 24 hour mode, set to 23:00
-    0x03, // Wednesday
-    0x30, // 30st
-    0x01, // January
-    0x19  // 201
+    0x05, // Friday
+    0x01, // 1st
+    0x02, // February
+    0x19  // 2019
 };
 
 void main(void) {
