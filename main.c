@@ -34,7 +34,7 @@ void main(void){
     	initLCD();// Initialize LCD
         lcd_set_ddram_addr(LCD_LINE1_ADDR);
         printf("    Welcome!");
-        __delay_us(750000);
+        __delay_us(2500000);
 	while(1){
         initMenu();
         menuLoop();
