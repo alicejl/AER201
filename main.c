@@ -16,6 +16,7 @@
 #include <xc.h>
 #include "configBits.h"
 #include "lcd.h"
+#include "run.h"
 
 const char keys[] = "123A456B789C*0#D"; 
 

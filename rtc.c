@@ -15,12 +15,10 @@
  *      low on charge
  */
 
-#include <xc.h>
-#include <stdio.h>
-#include <configBits.h>
-#include "I2C.h"
-#include "lcd.h"
+/********************************* Includes **********************************/
 #include "rtc.h"
+
+/******************************** Constants **********************************/
 
 const char keys[] = "123A456B789C*0#D";
 
@@ -33,9 +31,12 @@ void dateTime(void){
     lcd_set_ddram_addr(LCD_LINE4_ADDR);
     printf(" Press * to end");
 
+    I2C_Master_Init(100000);
+    
     unsigned char time[7]; // Create a byte array to hold time read from RTC
 
-    while (1){
+    //while (1){
+        // Reset RTC memory pointer
         I2C_Master_Start(); // Start condition
         I2C_Master_Write(0b11010000); // 7 bit RTC address + Write
         I2C_Master_Write(0x00); // Set memory pointer to seconds
@@ -56,18 +57,15 @@ void dateTime(void){
         lcd_set_ddram_addr(LCD_LINE3_ADDR);
         printf("Time: %02x:%02x:%02x", time[2],time[1],time[0]); // HH:MM:SS
 
-        if(PORTBbits.RB1 == 0){
+            while(PORTBbits.RB1 == 0){continue;}
             unsigned char keypress = (PORTB & 0xF0) >>4;
             while(PORTBbits.RB1 == 1){continue;}
         
             unsigned char temp = keys[keypress];
             if (temp == '*'){
                 return;
-        }
+            }
         __delay_ms(1000);
-    
-        }
-    }
+    //}
 }
-
 

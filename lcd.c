@@ -120,23 +120,6 @@ void putch(char data){
     send_byte((unsigned char)data);
 }
 
-void run(void){ //temp stand in for running autonomous routine
-	lcd_clear();
-    lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    printf("  Starting Run");
-    lcd_set_ddram_addr(LCD_LINE3_ADDR);
-    printf(" Press * to end");
-    while (1){
-        while(PORTBbits.RB1 == 0){ continue;}
-        unsigned char keypress = (PORTB & 0xF0) >>4;
-        while(PORTBbits.RB1 == 1){continue;}
-        
-        unsigned char temp = keys[keypress];
-        if (temp == '*'){
-            return;
-        }
-    }
-}
 
 void showLog(void){ //stand in for display run logs 
     lcd_clear();
@@ -196,21 +179,21 @@ void showLog(void){ //stand in for display run logs
 }
     
 
-void dateTime(void){
+//void dateTime(void){
     //char date;
-    lcd_clear();
-    lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    printf("  Date & Time");
-        lcd_set_ddram_addr(LCD_LINE3_ADDR);
-    printf(" Press * to end");
-    while (1){
-        while(PORTBbits.RB1 == 0){ continue;}
-        unsigned char keypress = (PORTB & 0xF0) >>4;
-        while(PORTBbits.RB1 == 1){continue;}
+  //  lcd_clear();
+    //lcd_set_ddram_addr(LCD_LINE1_ADDR);
+    //printf("  Date & Time");
+      //  lcd_set_ddram_addr(LCD_LINE3_ADDR);
+    //printf(" Press * to end");
+    //while (1){
+    //    while(PORTBbits.RB1 == 0){ continue;}
+      //  unsigned char keypress = (PORTB & 0xF0) >>4;
+        //while(PORTBbits.RB1 == 1){continue;}
         
-        unsigned char temp = keys[keypress];
-        if (temp == '*'){
-            return;
-        }
-    }
-}
+       // unsigned char temp = keys[keypress];
+        //if (temp == '*'){
+         //   return;
+        //}
+    //}
+//}
