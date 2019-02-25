@@ -96,8 +96,9 @@ void run(void){ //should there and back be the same function?
 void isCanister(void){
 	float sensor1;
 	float sensor2;
-
-	sensor1 = arduino ultrasonic sensor 1;
+	
+	sendToArduino(0);
+	sensor1 = readFromArduino();
 	sensor2 = arduino ultrasonic sensor 2;
 
 	if (((sensor1<upperlim)&&(sensor1>lowerlim))&&((sensor2<upperlim)&&(sensor2>lowerlim))){
