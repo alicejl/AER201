@@ -6,17 +6,11 @@ void initInterrupts(void){
 	//emergency stop
 	INTCON3bits.INT2IE =1;
 	TRISBbits.RB2=1;
-   	TRISCbits.RC0=0;//test
-	LATCbits.LATC0=0;//test
 
 	//timer interrupts
-	TMR0=49911;//set overflow such that there are 5 interrupts/second
-	TMR0CS=0;
-	T0PS2=1;//set prescaler to 128
-	T0PS1=1;
-	T0PS0=0;
-
-
+    TMR0IE=1;//enable timer interrupt
+    T0CON=0x07;// Prescaler= 1:256, 16-bit mode, Internal Clock
+	TMR0=0x4144;//set overflow such that there are 5 interrupts/second
 }
 
 void __interrupt() interruptHandler(void){
@@ -27,17 +21,21 @@ void __interrupt() interruptHandler(void){
     	}
 	else if(TMR0IF){//Timer Interrupt
 		TMR0IF=0;//clear interrupt
+		TMR0=0x4144;
 		count=count+1;
-		if (count==100){//2:50 min = 170s*5 = 850 timer interrupts
+		if (count==34){//2:50 min = 170s/5 = 850 timer interrupts
+			count=0;
         		if (rtn==0){
-        			LATCbits.LATC0=1;//test
-				//runMotor(2,100,2,100);
-				//while (isEnd()==0){continue;}
+                    //runMotor(2,100,2,100);
+                    //while (isEnd()==0){continue;}
 			}
 			else{
-        			LATCbits.LATC0=1;//test
-				//runMotor(1,100,1,100);
-				//while (isEnd()==0){continue;}
+                    //runMotor(1,100,1,100);
+                    //while (isEnd()==0){continue;}
 			}
+		}
+        else{
+            TMR0ON=1;
+        }
 	}
 }
