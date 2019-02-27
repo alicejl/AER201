@@ -14,11 +14,11 @@ int moveDelay=500;
 void initDispensor(void){
     LATCbits.LATC5=0;
     TRISCbits.TRISC5=0;
-    rotate0();
+    rotate90();
 }
 
 void rotate0(void){
-    for (int i=0;i<50;i++){
+    for (int i=0;i<40;i++){
         LATCbits.LATC5=1;
         __delay_us(1400);
         LATCbits.LATC5=0;
@@ -27,7 +27,7 @@ void rotate0(void){
 }
 
 void rotate90(void){
-    for (int i=0;i<50;i++){
+    for (int i=0;i<40;i++){
         LATCbits.LATC5=1;
         __delay_us(2400);
         LATCbits.LATC5=0;
@@ -36,7 +36,7 @@ void rotate90(void){
 }
 
 void dropBall(void){
-    rotate90();
-    __delay_ms(moveDelay);
     rotate0();
+    __delay_ms(moveDelay);
+    rotate90();
 }
