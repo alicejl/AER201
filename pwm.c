@@ -10,7 +10,6 @@
  */
 
 #include <xc.h>
-#include <math.h>
 #include "pwm.h"
 
 //<editor-fold defaultstate="collapsed" desc=" CONFIG BITS ">
@@ -73,11 +72,7 @@
 
 #define _XTAL_FREQ 32000000
 
-/**
- * @brief Sets the duty cycle of PWM1
- * @param duty The desired duty cycle as a percentage of the period (min: 0, 
- *        max: 100)
- */
+
 void set_pwm_duty_cycle(float duty1,float duty2){
     if((duty1 >= 0) && (duty1 <= 100.0) && (duty2 >= 0) && (duty2 <= 100.0)){
         // Our pulse width cannot exceed the period of the wave. First we
@@ -97,9 +92,9 @@ void set_pwm_duty_cycle(float duty1,float duty2){
         CCP1Y = duty_val1 & 1;
         CCPR1L = duty_val1 >> 2; // Set rest of the duty cycle bits in CCPR1L
 
-        CCP2X = duty_val2 & 2; // Set the 2 least significant bit in CCP1CON register
+        CCP2X = duty_val2 & 2; // Set the 2 least significant bit in CCP2CON register
         CCP2Y = duty_val2 & 1;
-        CCPR2L = duty_val2 >> 2; // Set rest of the duty cycle bits in CCPR1L
+        CCPR2L = duty_val2 >> 2; // Set rest of the duty cycle bits in CCPR2L
     }
 }
 
