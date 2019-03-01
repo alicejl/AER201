@@ -10,6 +10,7 @@
  * Preconditions:
  * @pre pin A5 on Arduino connected to RC4, and A4 to RC4
  * @pre pins are not connected while arduino is programming
+ */
 
 #include "PICArduino.h"
 
