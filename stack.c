@@ -58,10 +58,15 @@ int pop(void){
         s.array[s.pointer] = 0;//reset the array value
         s.pointer = s.pointer-1;//decrement pointer
     }
+    
+    else{
+        return -1;
+    }
     return data;
 }
 
 void enqueue(int dist, int ball, int full){
+    dist=(dist/10)-15;//convert to cm and subs dist from the front of the robot to the can centerline
     q.array[q.addP].dist = dist;//add data
     q.array[q.addP].serviced = ball;
     q.array[q.addP].full = full;
