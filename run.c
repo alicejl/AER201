@@ -35,6 +35,11 @@ int isEnd(void);
 void dispTermMessage(void);
 /** @brief initiates timer and emergency stop interrupts*/
 void initInterrupts(void);
+/** @brief initiates LED flags*/
+void ledInit(void);
+/** @brief set led flags*/
+void ledFlags(int canister,int open);
+
 
 void run(void){ //temp stand in for running autonomous routine
     int atCanister = 0; //is there a canister detected: 0 no, 1 yes
@@ -67,7 +72,7 @@ void run(void){ //temp stand in for running autonomous routine
 			}
             if ((distCheck == 1)&&(open==1)){flag=1;}
 			else {flag=0;}
-
+            ledFlags(atCanister, open);
 			push(flag,open); //info for return
 			enqueue(dist, deployBall, distCheck);//add to queue for run stats 
 			runMotor(1,50,1,50);//restart motors
@@ -75,6 +80,7 @@ void run(void){ //temp stand in for running autonomous routine
         else if ((atCanister ==1)&&(rtn==1)){
 			runMotor(0,0,0,0);
 			flag=pop();
+            
 			if (flag==1){
 				deployBall = canisterStatus();
 				if (deployBall==1){
@@ -82,7 +88,19 @@ void run(void){ //temp stand in for running autonomous routine
                     full=0;
 				}
                 else{full=1;}
+                ledFlags(atCanister,0);
 			}
+            
+            else if (flag==-1){
+                open = orientation();//checks orientation of canister, returns 1 if 1 if open to left
+				if (open == 0){		
+					deployBall = canisterStatus(); //check conditions: is a ball inside
+					if (deployBall == 1){
+						dropBall();//deploys servo to drop ball
+					}
+				}
+                ledFlags(atCanister,open);
+            }
             
             adjQ(deployBall,full);//adjusts the logged values for the queue
 			runMotor(1,50,1,50);
@@ -102,6 +120,7 @@ void run(void){ //temp stand in for running autonomous routine
     
 }
 
+//<editor-fold defaultstate="collapsed" desc=" orientation ">
 int orientation(void){
     unsigned int ultSonic;
 	ultSonic = requestArduino('1');
@@ -113,7 +132,9 @@ int orientation(void){
 		return 0;
 	}
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" initRun ">
 void initRun(void){
     LATA = 0x0;
 	TRISA = 0x0;//motor driving pins
@@ -125,7 +146,9 @@ void initRun(void){
     TMR0ON=1;//start timer
     runMotor(1,50,1,50);//start driving
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" runMotor ">
 void runMotor(int dirL,float speedL,int dirR, float speedR){//1 forwards, 0 stop, 2 backwards
     if (dirL==1){
         LATAbits.LATA0 = 0;
@@ -154,7 +177,9 @@ void runMotor(int dirL,float speedL,int dirR, float speedR){//1 forwards, 0 stop
 	set_pwm_duty_cycle(speedL,speedR);
 	return;
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" isCanister ">
 int isCanister(void){
     unsigned int ultSonic;
 	ultSonic = requestArduino('1');
@@ -166,7 +191,9 @@ int isCanister(void){
 		return 0;
 	}
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" isDist ">
 int isDist(int *prevDist,int *dist){
 	int diff;
     int pDist = *prevDist;
@@ -180,12 +207,16 @@ int isDist(int *prevDist,int *dist){
 		return 1;
 	}
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" canisterStatus ">
 int canisterStatus(void){
 	int ballPresent=requestArduino('3');
 		return ballPresent;
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" isEnd ">
 int isEnd(void){
     int distance = requestArduino('2');
 	if ((rtn==0)&&(distance>400)){
@@ -198,7 +229,9 @@ int isEnd(void){
 		return 0;
 	}
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" turnAround ">
 void turnAround(void){
 	sendToArduino('4');//pause encoder
 	runMotor(2,30,1,30);
@@ -210,7 +243,9 @@ void turnAround(void){
 	sendToArduino('5');//restart encoder
 	return;
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" dispTermMessage ">
 void dispTermMessage(void){
     TMR0ON=0;//stop timer
     int timeM = (count*5+7-(TMR0/9766))/60;//calculates the number of minutes from count and timer value
@@ -332,7 +367,9 @@ void dispTermMessage(void){
     
 	return;
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" initInterrupts ">
 void initInterrupts(void){
 	INTCONbits.GIE=1;
 
@@ -345,7 +382,9 @@ void initInterrupts(void){
     T0CON=0x07;// Prescaler= 1:256, 16-bit mode, Internal Clock
 	TMR0=0x4144;//set overflow such that there are 5 interrupts/second
 }
+//</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc=" interruptHandler ">
 void __interrupt() interruptHandler(void){
 	if (INT2IE && INT2IF){//RB2 Interrupt Emergency Stop
         	INT2IF=0; //clear flag
@@ -372,3 +411,28 @@ void __interrupt() interruptHandler(void){
         }
 	}
 }
+//</editor-fold>
+
+//<editor-fold defaultstate="collapsed" desc=" ledInit ">
+void ledInit(void){
+    LATAbits.LATA4 = 0;
+    LATAbits.LATA5 = 0;
+    TRISAbits.TRISA4 = 0;
+    TRISAbits.TRISA5 = 0;
+}
+//</editor-fold>
+
+//<editor-fold defaultstate="collapsed" desc=" ledFlags ">
+void ledFlags(int canister, int open){
+    LATAbits.LATA4 = canister;
+    if (open==0){
+        LATAbits.LATA5 = 1;
+    }
+    else{
+        LATAbits.LATA5 = 0;
+    }
+    __delay_ms(250);
+    LATAbits.LATA4 = 0;
+    LATAbits.LATA5 = 0;
+}
+//</editor-fold>
