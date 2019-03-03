@@ -16,7 +16,7 @@ const int upperlim = 16;//dist ranges for determining canisters
 const int lowerlim = 3;
 const int openlim = 3;//dist ranges for determining open canisters
 const int openlim2 = 2;
-int count;//timer counter
+int count = 0;//timer counter
 int rtn = 0;//0 for there, 1 for return
 
 /****Local Function Declarations****/
@@ -138,6 +138,9 @@ int orientation(void){
 void initRun(void){
     LATA = 0x0;
 	TRISA = 0x0;//motor driving pins
+    LATEbits.LATE0 = 0;//active low reset of arduino
+    __delay_ms(1);
+    LATEbits.LATE0 = 1;
     initPWM();
     initInterrupts();
     initStacks();
@@ -248,22 +251,23 @@ void turnAround(void){
 //<editor-fold defaultstate="collapsed" desc=" dispTermMessage ">
 void dispTermMessage(void){
     TMR0ON=0;//stop timer
-    int timeM = (count*5+7-(TMR0/9766))/60;//calculates the number of minutes from count and timer value
-    int timeS = ((count*5+7-(TMR0/9766))%60);//calculates the number of seconds
-    int fullCan[10];//numbers of the cans that were full after run
+    unsigned int time = count*5+7-(TMR0/9766);
+    int timeM = (count*5+7-(TMR0/9766))/60;
+    int timeS = ((count*5+7-(TMR0/9766))%60);
+    int fullCan[10];
     int fullCount=0;
-    int emptCan[10];//numbers of the cans that were empty after the run 
+    int emptCan[10];
     int emptCount = 0;
-    int dispCan[10];//numbers of the cans that balls were dispensed for
+    int dispCan[10];
     int dispCount = 0;
-    int distCan[10];//distances of the cans
+    int distCan[10];
     int dist;
     int ball;
     int full;
-    int totCan=qLen();//total number of cans in run
+    int totCan=qLen();
 	
 	for (int i=0;i<totCan;i++){
-		dequeue(&dist,&ball,&full);//dequeues and adds to the arrays
+		dequeue(&dist,&ball,&full);
         distCan[i]=dist;
         if (full==1){
             fullCan[fullCount]=i+1;
@@ -278,94 +282,142 @@ void dispTermMessage(void){
             dispCount=dispCount+1;
         }
 	}
-	lcd_clear();//printing the code to the displays
-	lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    printf("    Run Over");
-	lcd_set_ddram_addr(LCD_LINE2_ADDR);
-    printf("  %d canisters",totCan);
     
-    if (timeS>9){
-        lcd_set_ddram_addr(LCD_LINE3_ADDR);
-        printf(" Run time %d:%d",timeM,timeS);
-    }
-    else {
-        lcd_set_ddram_addr(LCD_LINE3_ADDR);
-        printf(" Run time %d:0%d",timeM,timeS);
-    }
-	lcd_set_ddram_addr(LCD_LINE4_ADDR);
-    printf("%d balls dropped",dispCount);
-    
-	__delay_ms(4000);
-    
-    lcd_clear();
-	lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    printf("Filled Canisters");
-    lcd_set_ddram_addr(LCD_LINE2_ADDR);
-    if (fullCount<8){
-        for (int i=0;i<fullCount;i++){
-            printf("%d ",fullCan[i]);
-        }
-    }
-    else{
-        lcd_set_ddram_addr(LCD_LINE2_ADDR);
-        printf("%d %d %d %d %d %d %d %d ",fullCan[0],fullCan[1],fullCan[2],fullCan[3],fullCan[4],fullCan[5],fullCan[6],fullCan[7]);
-        lcd_set_ddram_addr(LCD_LINE3_ADDR);
-        for (int i=8;i<fullCount;i++){
-            printf("%d ",fullCan[i]);
-        }
-    }
-    __delay_ms(4000);
+    writeLog((unsigned int) totCan,time, (unsigned int) fullCount, (unsigned int) emptCount, (unsigned int) dispCount);
     
     lcd_clear();
     lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    printf(" Empty Canisters");
-	lcd_set_ddram_addr(LCD_LINE2_ADDR);
-    if (emptCount<8){
-        for (int i=0;i<emptCount;i++){
-            printf("%d ",emptCan[i]);
-        }
-    }
-    else{
-        lcd_set_ddram_addr(LCD_LINE2_ADDR);
-        printf("%d %d %d %d %d %d %d %d ",emptCan[0],emptCan[1],emptCan[2],emptCan[3],emptCan[4],emptCan[5],emptCan[6],emptCan[7]);
-        lcd_set_ddram_addr(LCD_LINE3_ADDR);
-        for (int i=8;i<emptCount;i++){
-            printf("%d ",emptCan[i]);
-        }
-    }
-    __delay_ms(4000);
-    
-    lcd_clear();
-	lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    printf(" Can. Distances");
+    printf("    Run Over");
     lcd_set_ddram_addr(LCD_LINE2_ADDR);
-    if (totCan<4){
-        for (int i=0;i<totCan;i++){
-            printf("%d ",distCan[i]);
-        }
-    }
-    else if((totCan>3)&&(totCan<8)){
-        lcd_set_ddram_addr(LCD_LINE2_ADDR);
-        printf("%d %d %d %d",distCan[0],distCan[1],distCan[2],distCan[3]);
-        lcd_set_ddram_addr(LCD_LINE3_ADDR);
-        for (int i=4;i<totCan;i++){
-            printf("%d ",distCan[i]);
-        }
-    }
-    else{
-        lcd_set_ddram_addr(LCD_LINE2_ADDR);
-        printf("%d %d %d %d",distCan[0],distCan[1],distCan[2],distCan[3]);
-        lcd_set_ddram_addr(LCD_LINE3_ADDR);
-        printf("%d %d %d %d",distCan[4],distCan[6],distCan[5],distCan[7]);
-        lcd_set_ddram_addr(LCD_LINE4_ADDR);
-        for (int i=8;i<totCan;i++){
-            printf("%d ",distCan[i]);
-        }
-    }
+    printf("Show run stats?");
+    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+    printf("A. Yes");
+    lcd_set_ddram_addr(LCD_LINE4_ADDR);
+    printf("B. No");
+    while(1){
+        	// RB1 is the interrupt pin, so if there is no key pressed, RB1 will be
+	        // 0. The PIC will wait and do nothing until a key press is signaled
+        	while(PORTBbits.RB1 == 0){  continue;   }
+        
+        	// Read the 4-bit character code
+	        unsigned char keypress = (PORTB & 0xF0) >> 4;
+        
+        	// Wait until the key has been released
+	        while(PORTBbits.RB1 == 1){  continue;   }
+        
+        	Nop(); // Apply breakpoint here to prevent compiler optimizations
+        
+        	unsigned char temp = keys[keypress];
+	        if (temp == 'A'){ 
+                lcd_clear();
+                lcd_set_ddram_addr(LCD_LINE1_ADDR);
+                printf("    Run Over");
+                lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                printf("  %d canisters",totCan);
     
-    __delay_ms(4000);
+                if (timeS>9){
+                    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+                    printf(" Run time %d:%d",timeM,timeS);
+                }
+                else {
+                    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+                    printf(" Run time %d:0%d",timeM,timeS);
+                }
+                lcd_set_ddram_addr(LCD_LINE4_ADDR);
+                printf("%d balls dropped",dispCount);
     
-	return;
+                __delay_ms(4000);
+    
+                lcd_clear();
+                lcd_set_ddram_addr(LCD_LINE1_ADDR);
+                printf("Filled Canisters");
+                lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                if (fullCount<8){
+                    for (int i=0;i<fullCount;i++){
+                        printf("%d ",fullCan[i]);
+                    }
+                }
+                else{
+                    lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                    printf("%d %d %d %d %d %d %d %d ",fullCan[0],fullCan[1],fullCan[2],fullCan[3],fullCan[4],fullCan[5],fullCan[6],fullCan[7]);
+                    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+                    for (int i=8;i<fullCount;i++){
+                        printf("%d ",fullCan[i]);
+                    }
+                }
+                __delay_ms(4000);
+    
+                lcd_clear();
+                lcd_set_ddram_addr(LCD_LINE1_ADDR);
+                printf(" Empty Canisters");
+                lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                if (emptCount<8){
+                    for (int i=0;i<emptCount;i++){
+                        printf("%d ",emptCan[i]);
+                    }
+                }
+                else{
+                    lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                    printf("%d %d %d %d %d %d %d %d ",emptCan[0],emptCan[1],emptCan[2],emptCan[3],emptCan[4],emptCan[5],emptCan[6],emptCan[7]);
+                    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+                    for (int i=8;i<emptCount;i++){
+                        printf("%d ",emptCan[i]);
+                    }
+                }
+                __delay_ms(4000);
+    
+                lcd_clear();
+                lcd_set_ddram_addr(LCD_LINE1_ADDR);
+                printf(" Can. Distances");
+                lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                if (totCan<4){
+                    for (int i=0;i<totCan;i++){
+                    printf("%d ",distCan[i]);
+                    }
+                }
+                else if((totCan>3)&&(totCan<8)){
+                    lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                    printf("%d %d %d %d",distCan[0],distCan[1],distCan[2],distCan[3]);
+                    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+                    for (int i=4;i<totCan;i++){
+                        printf("%d ",distCan[i]);
+                    }
+                }
+                else{
+                    lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                    printf("%d %d %d %d",distCan[0],distCan[1],distCan[2],distCan[3]);
+                    lcd_set_ddram_addr(LCD_LINE3_ADDR);
+                    printf("%d %d %d %d",distCan[4],distCan[6],distCan[5],distCan[7]);
+                    lcd_set_ddram_addr(LCD_LINE4_ADDR);
+                    for (int i=8;i<totCan;i++){
+                        printf("%d ",distCan[i]);
+                    }
+                }
+    
+                __delay_ms(4000);
+    
+                return;
+            }
+            
+            else if (temp == 'B'){
+                return;
+            }
+            else{
+                lcd_clear();
+                lcd_set_ddram_addr(LCD_LINE1_ADDR);
+                printf("Err Invalid Input");
+                lcd_clear();
+                lcd_set_ddram_addr(LCD_LINE1_ADDR);
+                printf("    Run Over");
+                lcd_set_ddram_addr(LCD_LINE2_ADDR);
+                printf("Show run stats?");
+                lcd_set_ddram_addr(LCD_LINE3_ADDR);
+                printf("A. Yes");
+                lcd_set_ddram_addr(LCD_LINE4_ADDR);
+                printf("B. No");
+                __delay_ms(1000);
+            }
+    }
 }
 //</editor-fold>
 
