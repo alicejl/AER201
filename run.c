@@ -62,7 +62,7 @@ void run(void){ //temp stand in for running autonomous routine
 			runMotor(0,0,0,0); //pause motors
 			distCheck = isDist(&prevDist,&dist);//check if distance exceeds 20 cm returns 1 if true
             if (distCheck == 1){
-				open = orientation();//checks orientation of canister, returns 1 if 1 if open to left
+				open = orientation();//checks orientation of canister, returns 1 if open to left
 				if (open == 0){		
 					deployBall = canisterStatus(); //check conditions: is a ball inside
 					if (deployBall == 1){
