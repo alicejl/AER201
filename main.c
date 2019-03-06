@@ -37,8 +37,8 @@ void main(void){
         printf("    Welcome!");
         __delay_us(2500000);
 	while(1){
-        initMenu();
-        menuLoop();
+        	initMenu();
+        	menuLoop();
 	}
 }
 
