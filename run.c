@@ -92,7 +92,7 @@ void run(void){ //temp stand in for running autonomous routine
 			}
             
             else if (flag==-1){
-                open = orientation();//checks orientation of canister, returns 1 if 1 if open to left
+                open = orientation();//checks orientation of canister, returns 1 if open to left
 				if (open == 0){		
 					deployBall = canisterStatus(); //check conditions: is a ball inside
 					if (deployBall == 1){
