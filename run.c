@@ -203,7 +203,7 @@ int isDist(int *prevDist,int *dist){
     *prevDist = *dist;
 	*dist = (int)requestArduino('2');
 	diff=*dist - pDist;
-	if (diff<20){
+	if (diff<300){//condition is 30cm=3000 mm
 		return 0;
 	}
 	else{
@@ -222,10 +222,10 @@ int canisterStatus(void){
 //<editor-fold defaultstate="collapsed" desc=" isEnd ">
 int isEnd(void){
     int distance = requestArduino('2');
-	if ((rtn==0)&&(distance>400)){
+	if ((rtn==0)&&(distance>40000)){//4m=4 000mm
 		return 1;
 	}
-	else if((rtn==1)&&(distance>800)){
+	else if((rtn==1)&&(distance>8000)){//8m=8000mm
 		return 1;
 	}
 	else{
