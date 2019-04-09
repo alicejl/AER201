@@ -5,7 +5,7 @@
 #endif
 
 int rSpeed,lSpeed;
-const byte pic = 2;
+const byte pic = 3;
 const byte turn = 4;
 const byte can = 5;
 const byte motRf = 6;
