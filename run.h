@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "configBits.h"
-#include "pwm.h"
+//#include "pwmTest.h"
 #include "PICArduino.h"
 #include "ballDispenser.h"
 #include "stack.h"
@@ -31,7 +31,7 @@ void run(void);
 void initRun(void);
 
 /** @brief controls the motor*/
-void runMotor(int dirL,float speedL,int dirR, float speedR);
+void runMotor(int index);
 
 /** @brief turns the robot*/
 void turnAround(void);

@@ -120,17 +120,20 @@ void putch(char data){
     send_byte((unsigned char)data);
 }
 
+void runDisp(void){
+    lcd_clear();
+	lcd_set_ddram_addr(LCD_LINE1_ADDR);
+    printf("  Starting Run");
+}
 
 void showLog(void){ //stand in for display run logs 
     lcd_clear();
     lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    printf("  Showing Logs");
+    printf(" Select 1-4 to");
     lcd_set_ddram_addr(LCD_LINE2_ADDR);
-    printf("1. Run 1");
-    lcd_set_ddram_addr(LCD_LINE3_ADDR);
-    printf("2. Run 2");
+    printf("      logs");
     lcd_set_ddram_addr(LCD_LINE4_ADDR);
-    printf("3. Run 3");
+    printf("Press * to exit");
     
     while (1){
         while(PORTBbits.RB1 == 0){  continue;   }
@@ -140,25 +143,29 @@ void showLog(void){ //stand in for display run logs
        	Nop(); // Apply breakpoint here to prevent compiler optimizations
         
        	unsigned char temp = keys[keypress];
-        if ((temp == '1')||(temp == '2')||(temp == '3')){
-            //read the queue of
-            lcd_clear();
-            lcd_set_ddram_addr(LCD_LINE1_ADDR);
-            printf("  Run %c Info:",temp);
-            lcd_set_ddram_addr(LCD_LINE4_ADDR);
-            printf("Press * to exit");
-            while (1){
-                while(PORTBbits.RB1 == 0){  continue;   }
-                keypress = (PORTB & 0xF0) >> 4;
-                while(PORTBbits.RB1 == 1){  continue;   }
-        
-                Nop();
-                temp = keys[keypress];
-                if (temp =='*'){
-                    return;
-                }
-            }
+        if (temp=='1'){
+            dispLog((unsigned char)0x0);
+            return;
         } 
+        
+        else if (temp=='2'){
+            dispLog((unsigned char)0x1);
+            return;
+        } 
+        
+        else if (temp=='3'){
+            dispLog((unsigned char)0x2);
+            return;
+        } 
+        
+        else if (temp=='4'){
+            dispLog((unsigned char)0x3);
+            return;
+        } 
+        
+        else if (temp=='*'){
+            return;
+        }
         
         else{
             lcd_clear();
@@ -167,33 +174,13 @@ void showLog(void){ //stand in for display run logs
             __delay_us(1000000);
             lcd_clear();
             lcd_set_ddram_addr(LCD_LINE1_ADDR);
-            printf("  Showing Logs");
+            printf(" Select 1-4 to");
             lcd_set_ddram_addr(LCD_LINE2_ADDR);
-            printf("1. Run 1");
-            lcd_set_ddram_addr(LCD_LINE3_ADDR);
-            printf("2. Run 2");
+            printf("      logs");
             lcd_set_ddram_addr(LCD_LINE4_ADDR);
-            printf("3. Run 3");
+            printf("Press * to exit");
         }
+        
     }
 }
-    
 
-//void dateTime(void){
-    //char date;
-  //  lcd_clear();
-    //lcd_set_ddram_addr(LCD_LINE1_ADDR);
-    //printf("  Date & Time");
-      //  lcd_set_ddram_addr(LCD_LINE3_ADDR);
-    //printf(" Press * to end");
-    //while (1){
-    //    while(PORTBbits.RB1 == 0){ continue;}
-      //  unsigned char keypress = (PORTB & 0xF0) >>4;
-        //while(PORTBbits.RB1 == 1){continue;}
-        
-       // unsigned char temp = keys[keypress];
-        //if (temp == '*'){
-         //   return;
-        //}
-    //}
-//}

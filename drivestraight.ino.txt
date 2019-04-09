@@ -1,0 +1,314 @@
+#include "I2Cdev.h"
+#include "MPU6050_6Axis_MotionApps20.h"
+#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+#include "Wire.h"
+#endif
+
+int rSpeed,lSpeed;
+const byte pic = 2;
+const byte turn = 4;
+const byte can = 5;
+const byte motRf = 6;
+const byte motRb = 7;
+const byte motLf = 8;
+const byte motLb = 9;
+const byte motPL = 10;
+const byte motPR = 11;
+const byte done = 12;
+byte start = 0;
+
+unsigned char isRefYawAss = 0;
+float yawRef = 0.0;
+unsigned int calicount = 2500;
+
+MPU6050 mpu;
+#define OUTPUT_READABLE_YAWPITCHROLL
+
+// MPU control/status vars
+bool dmpReady = false;  // set true if DMP init was successful
+uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;     // count of all bytes currently in FIFO
+uint8_t fifoBuffer[64]; // FIFO storage buffer
+
+// orientation/motion vars
+Quaternion q;           // [w, x, y, z]         quaternion container
+VectorFloat gravity;    // [x, y, z]            gravity vector
+float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+
+void setup() {
+    pinMode(can, INPUT);
+    pinMode(turn, INPUT);
+    pinMode(motRf, OUTPUT);
+    pinMode(motRb, OUTPUT);
+    pinMode(motLf, OUTPUT);
+    pinMode(motLb, OUTPUT);
+    pinMode(motPL, OUTPUT);
+    pinMode(motPR, OUTPUT);
+    pinMode(done, OUTPUT);
+
+    digitalWrite(motRf,LOW);
+    digitalWrite(motRb,LOW);
+    digitalWrite(motLf,LOW);
+    digitalWrite(motLb,LOW);
+    digitalWrite(motPL, LOW);
+    digitalWrite(motPR, LOW);
+    digitalWrite(done, LOW);
+    
+    // join I2C bus (I2Cdev library doesn't do this automatically)
+    #if I2CDEV_IMPLEM
+    NTATION == I2CDEV_ARDUINO_WIRE
+        Wire.begin();
+        Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+    #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+        Fastwire::setup(400, true);
+    #endif
+
+    Serial.begin(115200);
+    while (!Serial); // wait for Leonardo enumeration, others continue immediately
+
+    // initialize device
+    Serial.println(F("Initializing I2C devices..."));
+    mpu.initialize();
+
+    // verify connection
+    Serial.println(F("Testing device connections..."));
+    Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+
+    // ready when buffer empty
+    while (Serial.available() && Serial.read()); // empty buffer
+
+    // load and configure the DMP
+    Serial.println(F("Initializing DMP..."));
+    devStatus = mpu.dmpInitialize();
+
+    // supply your own gyro offsets here, scaled for min sensitivity
+    mpu.setXGyroOffset(220);
+    mpu.setYGyroOffset(76);
+    mpu.setZGyroOffset(-85);
+    mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+
+    // make sure it worked (returns 0 if so)
+    if (devStatus == 0) {
+        // turn on the DMP, now that it's ready
+        Serial.println(F("Enabling DMP..."));
+        mpu.setDMPEnabled(true);
+
+        // set our DMP Ready flag so the main loop() function knows it's okay to use it
+        Serial.println(F("DMP ready!"));
+        dmpReady = true;
+
+        // get expected DMP packet size for later comparison
+        packetSize = mpu.dmpGetFIFOPacketSize();
+    } else {
+        // ERROR!
+        // 1 = initial memory load failed
+        // 2 = DMP configuration updates failed
+        // (if it's going to break, usually the code will be 1)
+        Serial.print(F("DMP Initialization failed (code "));
+        Serial.print(devStatus);
+        Serial.println(F(")"));
+    }
+    attachInterrupt(digitalPinToInterrupt(pic), picInterrupt, FALLING);
+}
+
+void loop() {
+    float factor = 0;
+    unsigned char rSpeed = 160;
+    unsigned char lSpeed = 160;
+    
+    // if programming failed, don't try to do anything
+    if (!dmpReady) {
+      setup();
+      return;
+    }
+
+    if (start==0){
+      drive(0,0);//turn of motors
+      int s=digitalRead(can)&&digitalRead(turn);
+      while (s==0){
+        s=digitalRead(can)&&digitalRead(turn);
+      }
+      start=1;
+      drive(rSpeed,lSpeed);
+    }
+    
+    // get current FIFO count
+    fifoCount = mpu.getFIFOCount();
+
+    // check for overflow (this should never happen unless our code is too inefficient)
+    if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
+        // reset so we can continue cleanly
+        mpu.resetFIFO();
+        fifoCount = mpu.getFIFOCount();
+        Serial.println(F("FIFO overflow!"));
+
+    // otherwise, check for DMP data ready interrupt (this should happen frequently)
+    } else {
+        // wait for correct available data length, should be a VERY short wait
+        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+
+        // read a packet from FIFO
+        mpu.getFIFOBytes(fifoBuffer, packetSize);
+        
+        // track FIFO count here in case there is > 1 packet available
+        // (this lets us immediately read more without waiting for an interrupt)
+        fifoCount -= packetSize;
+
+        #ifdef OUTPUT_READABLE_YAWPITCHROLL
+            // display Euler angles in degrees
+            mpu.dmpGetQuaternion(&q, fifoBuffer);
+            mpu.dmpGetGravity(&gravity, &q);
+            mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+//            Serial.print("ypr\t");
+//            Serial.print(ypr[0] * 180/M_PI);
+//            Serial.print("\t");
+//            Serial.print(ypr[1] * 180/M_PI);
+//            Serial.print("\t");
+//            Serial.println(ypr[2] * 180/M_PI);
+        #endif
+    }
+    if(calicount != 0){
+    calicount = calicount - 1;
+    }else{
+      if(!isRefYawAss){
+        yawRef = ypr[0] * 180/M_PI;
+        isRefYawAss = 1;
+      }
+    
+        factor = (ypr[0] * 180/M_PI) - yawRef;
+        factor = calc(factor);
+        Serial.print("Factor: ");Serial.println(factor);
+       // if (mode == 0b10){              // 01 means rear wheel drive                                // 10 is forward when driving front wheel drive
+            rSpeed = rSpeed+factor;
+            lSpeed = lSpeed-factor;
+
+            Serial.print(" ");
+            Serial.print(rSpeed);
+            Serial.print(" ");
+            Serial.println(lSpeed);
+            
+            drive(rSpeed, lSpeed);
+ 
+    }  
+}
+//unsigned char stateRead(void){
+//    unsigned char rMode = 0;
+//    if (digitalRead(mode0) == HIGH){
+//      rMode += 1;
+//    }
+//    if (digitalRead(mode1) == HIGH){
+//      rMode += 2;
+//    }
+//    return rMode;
+//}
+
+void drive(unsigned char rSpeed, unsigned char lSpeed){
+    analogWrite(motPR,rSpeed);
+    digitalWrite(motRf, HIGH);
+    digitalWrite(motRb,LOW);
+    analogWrite(motPL,lSpeed);
+    digitalWrite(motLf, LOW);
+    digitalWrite(motLb,HIGH);  
+}
+
+float calc(float d){
+  unsigned char amp = 40;
+  unsigned char var = 3;
+  unsigned char maxVar = 10;
+  if (d < (-360.0+maxVar)){
+    if (d < (-360.0+var)){
+      //return 0;
+      return amp*sqrt((d+360)/var);
+    }
+    return amp;
+    //return map(d,-360.0,-360.0+maxVar,0.0,-amp);
+  } else if (d > 360.0-maxVar){
+    if (d > (360.0-var)){
+      //return 0;
+      return -amp*sqrt(-(d-360.0)/var);
+    }
+    return -amp;
+    //return map(d,360.0-maxVar,360.0,amp,0.0);
+  } else  if (d > -maxVar&& d < maxVar) {
+    if (d > -var && d < var){
+      if (d > 0){
+        //return 0;
+        return -amp*sqrt(d/var);
+      } else if (d < 0){
+        //return 0;
+        return amp*sqrt(-d/var);
+      }
+    }
+    if (d > var){
+      return -amp;
+    } else if (d < -var){
+      return amp;
+    }
+  } else {
+    return 0;
+  }
+  return 0;
+}
+
+void picInterrupt(void){
+  int canStat=digitalRead(can);
+  int turnStat=digitalRead(turn);
+  if ((canStat==1)&&(turnStat==0)){
+    delay(75);
+    drive(0,0);
+    //if scaning can reverse stop forward stop
+    while (digitalRead(can)==HIGH){continue;}
+  }
+  else if((turnStat==1)&&(canStat==0)){
+        digitalWrite(done, LOW);
+        float factor = (ypr[0] * 180/M_PI) - yawRef;
+        while(factor <= isRefYawAss+90){
+          drive(255,0);
+              // get current FIFO count
+          fifoCount = mpu.getFIFOCount();
+      
+          // check for overflow (this should never happen unless our code is too inefficient)
+          if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
+              // reset so we can continue cleanly
+              mpu.resetFIFO();
+              fifoCount = mpu.getFIFOCount();
+              Serial.println(F("FIFO overflow!"));
+          }
+          // otherwise, check for DMP data ready interrupt (this should happen frequently)
+          else {
+              // wait for correct available data length, should be a VERY short wait
+              while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+      
+              // read a packet from FIFO
+              mpu.getFIFOBytes(fifoBuffer, packetSize);
+              
+              // track FIFO count here in case there is > 1 packet available
+              // (this lets us immediately read more without waiting for an interrupt)
+              fifoCount -= packetSize;
+      
+              #ifdef OUTPUT_READABLE_YAWPITCHROLL
+                  // display Euler angles in degrees
+                  mpu.dmpGetQuaternion(&q, fifoBuffer);
+                  mpu.dmpGetGravity(&gravity, &q);
+                  mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+      //            Serial.print("ypr\t");
+      //            Serial.print(ypr[0] * 180/M_PI);
+      //            Serial.print("\t");
+      //            Serial.print(ypr[1] * 180/M_PI);
+      //            Serial.print("\t");
+      //            Serial.println(ypr[2] * 180/M_PI);
+              #endif
+          }
+          factor = (ypr[0] * 180/M_PI) - yawRef;
+        }
+        yawRef=yawRef+90;//increment reference angle by 90 degrees
+        digitalWrite(done, HIGH);
+    }
+    else if ((canStat==1)&&(turnStat==1)){
+      isRefYawAss=0;
+      yawRef=0;
+      start=0;
+    }
+}

@@ -8,7 +8,7 @@
  *
  * @defgroup CharacterLCD
  * @brief Driver for Hitachi HD44780-based character LCD
- * @{
+ * 
  */
 
 #ifndef LCD_H
@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "configBits.h"
+#include "logs.h"
 
 /********************************** Macros ***********************************/
 #define RS LATDbits.LATD2          
@@ -123,11 +124,12 @@ void putch(char data);
  */
 void initMenu(void);
 
-
-void run(void);
+/**
+ * @brief display past logs
+ */
 void showLog(void);
-void dateTime(void);
 
+void runDisp();
 
 /**
  * @}
