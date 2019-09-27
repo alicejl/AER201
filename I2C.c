@@ -89,3 +89,19 @@ unsigned char I2C_Master_Read(unsigned char ackBit){
 
     return receivedByte;
 }
+
+unsigned int I2C_Master_Read_Int(unsigned char ackBit){//returns an integer for the read value
+    I2C_Master_Wait(); // Ensure I2C module is idle
+    SSPCON2bits.RCEN = 1; // Enable receive mode for I2C module
+
+    I2C_Master_Wait(); // Wait until receive buffer is full
+
+    // Read received byte from the serial port buffer
+    unsigned int receivedByte = SSPBUF;
+
+    I2C_Master_Wait(); // Ensure I2C module is idle
+    SSPCON2bits.ACKDT = ackBit; // Acknowledge data bit
+    SSPCON2bits.ACKEN = 1; // Initiate acknowledge bit transmission sequence
+
+    return receivedByte;
+}
