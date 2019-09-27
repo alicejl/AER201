@@ -4,3 +4,4 @@ AER 201 2019 Autonomous Ball Dispensing Robot
 <br>Members: Ryan Chappus, Alice Liang, Zhengbang Zhou
 <br>Microcontrollers: PIC18F4620 and Arduino Nano
 <br>Built on code written by Michael Ding and Tyler Gamvrelis
+<br>Used Jrowberg's MPU6050 Arduino Library
