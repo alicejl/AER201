@@ -1,17 +1,27 @@
 /**
  * @file
+ * @author Michael Ding
+ * @author Tyler Gamvrelis
  * @author Alice Liang
  *
- * Created on Jan 30, 2019, 5:09 PM
- *
- * @defgroup PICArduino
- * @brief Uses I2C to handshake between the PIC and Arduino
+ * Created on Feb 22, 2019, 10:57 AM
+ * 
+ * @defgroup PIC_I2C_Arduino
+ * @brief handshake with arduino nano and exchange sensor data
  * 
  * Preconditions:
- * @pre pin A5 on Arduino connected to RC4, and A4 to RC4
- * @pre pins are not connected while arduino is programming
+ * @pre PIC-Arduino link switches are enabled (ON) for A4 and A5 of the Arduino
+ *      Nano (RC4 and RC3 for the primary PIC, respectively)
+ * @pre PIC and Arduino Nano agree on the Arduino Nano's slave address (i.e. the
+ *      same slave address is used in software)
+ * @pre A PC is connected if the Arduino Nano serial monitor is to be used. Note
+ *      that the serial monitor baud rate must be 9600 for this program
  */
 
+
+#include <xc.h>
+#include <stdbool.h>
+#include "configBits.h"
 #include "PICArduino.h"
 
 void initArduino(void){
@@ -40,9 +50,9 @@ unsigned int requestArduino(unsigned id){
     sendToArduino(id);
     unsigned int a;
     unsigned b;
-    b=readFromArduino();//reads 8 least significant bits
-    a=readFromArduino();//reads 8 most significant bits
+    b=readFromArduino();
+    a=readFromArduino();
     unsigned int data = a;
-    data=(data<<8)|b;//combines int
+    data=(data<<8)|b;
     return data;
 }
